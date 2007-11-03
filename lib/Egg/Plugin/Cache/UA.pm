@@ -11,7 +11,7 @@ use base qw/
   Egg::Plugin::LWP
   /;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -117,45 +117,11 @@ The response header to press the cashe of the browser side is set.
 
 =head1 METHODS
 
-=cut
-sub _setup {
-	my($e)= @_;
-	my $conf= $e->config->{plugin_cache_ua} ||= {};
-	$conf->{content_type}       ||= 'text/html';
-	$conf->{content_type_error} ||= 'text/html';
-	$conf->{cache_name}    || die q{ I want setup 'cache_name'. };
-	$conf->{cache_expires} ||= undef;
-	my $allows= $conf->{allow_hosts} || die q{ I want setup 'allow_hosts' };
-	my $regex = join '|',
-	   map{quotemeta}(ref($allows) eq 'ARRAY' ? @$allows: $allows);
-
-	no warnings 'redefine';
-	*Egg::Plugin::Cache::UA::handler::referer_check= sub {
-		my($self)= @_;
-		my $referer= $self->e->request->referer || return 1;
-		$referer=~m{^https?\://(?:$regex)} ? 1: 0;
-	  };
-
-	$e->next::method;
-}
-
 =head2 cache_ua
 
 The Egg::Plugin::Cache::UA::handler object is returned.
 
   my $cache_ua= $e->cache_ua;
-
-=cut
-sub cache_ua {
-	$_[0]->{cache_ua} ||= Egg::Plugin::Cache::UA::handler->new
-	                       ($_[0], $_[0]->config->{plugin_cache_ua});
-}
-
-package Egg::Plugin::Cache::UA::handler;
-use strict;
-use warnings;
-use Carp qw/croak/;
-use base qw/Egg::Base/;
 
 =head1 HADLER METHODS
 
@@ -211,38 +177,6 @@ When not becoming a hit to cashe, it becomes true.
 
 =back
 
-=cut
-sub get {
-	my($self, $url, $option)= __get_args(@_);
-	$self->referer_check || return 0;
-	my $result= $self->cache->get($url) || do {
-		my %attr;
-		if (my $res= $self->e->ua->request( GET => $url )) {
-			if ($res->is_success) {
-				$attr{is_success}= 1;
-				if (my $status= $res->status_line) {
-					$attr{status}= $status if $status!~/^200/;
-				}
-				my @content_type= $res->header('content_type') || "";
-				$attr{content_type}= $content_type[0]
-				                  || $option->{content_type};
-				$attr{content}= $res->content || "";
-			} else {
-				$attr{status}= $res->status_line || '403 Forbidden';
-				$attr{error} = " Error in $url : ". $res->status_line;
-			}
-		} else {
-			$attr{status}= "408 Request Time-out";
-			$attr{error} = " $url doesn't return the response. ";
-		}
-		$attr{content_type} ||= $option->{content_type_error};
-		$attr{content}      ||= "";
-		$self->cache->set($url, \%attr, $option->{cache_expires});
-		$attr{no_hit}= 1;
-		\%attr;
-	  };
-}
-
 =head2 output ( [URL], [OPTION] )
 
 L<Egg::Response> is set directly based on information obtained by the get method.
@@ -277,7 +211,87 @@ of error is set.
 * Because $e-E<gt>response-E<gt>body is defined, the processing of view comes to
   be passed by the operation of Egg.
 
+=head2 delete ( [URL] )
+
+The data of URL is deleted from cashe.
+
+  $e->delete('http://domainname/');
+
+=over 4
+
+=item * Alias is 'remove'.
+
+=back
+
+=head2 cache
+
+The cashe object set to 'cache_name' is returned.
+
+  my $cache= $e->cache_ua->cache;
+
 =cut
+
+sub _setup {
+	my($e)= @_;
+	my $conf= $e->config->{plugin_cache_ua} ||= {};
+	$conf->{content_type}       ||= 'text/html';
+	$conf->{content_type_error} ||= 'text/html';
+	$conf->{cache_name}    || die q{ I want setup 'cache_name'. };
+	$conf->{cache_expires} ||= undef;
+	my $allows= $conf->{allow_hosts} || die q{ I want setup 'allow_hosts' };
+	my $regex = join '|',
+	   map{quotemeta}(ref($allows) eq 'ARRAY' ? @$allows: $allows);
+
+	no warnings 'redefine';
+	*Egg::Plugin::Cache::UA::handler::referer_check= sub {
+		my($self)= @_;
+		my $referer= $self->e->request->referer || return 1;
+		$referer=~m{^https?\://(?:$regex)} ? 1: 0;
+	  };
+
+	$e->next::method;
+}
+sub cache_ua {
+	$_[0]->{cache_ua} ||= Egg::Plugin::Cache::UA::handler->new
+	                       ($_[0], $_[0]->config->{plugin_cache_ua});
+}
+
+package Egg::Plugin::Cache::UA::handler;
+use strict;
+use warnings;
+use Carp qw/croak/;
+use base qw/Egg::Base/;
+
+sub get {
+	my($self, $url, $option)= __get_args(@_);
+	$self->referer_check || return 0;
+	my $result= $self->cache->get($url) || do {
+		my %attr;
+		if (my $res= $self->e->ua->request( GET => $url )) {
+			if ($res->is_success) {
+				$attr{is_success}= 1;
+				if (my $status= $res->status_line) {
+					$attr{status}= $status if $status!~/^200/;
+				}
+				my @content_type= $res->header('content_type') || "";
+				$attr{content_type}= $content_type[0]
+				                  || $option->{content_type};
+				$attr{content}= $res->content || "";
+			} else {
+				$attr{status}= $res->status_line || '403 Forbidden';
+				$attr{error} = " Error in $url : ". $res->status_line;
+			}
+		} else {
+			$attr{status}= "408 Request Time-out";
+			$attr{error} = " $url doesn't return the response. ";
+		}
+		$attr{content_type} ||= $option->{content_type_error};
+		$attr{content}      ||= "";
+		$self->cache->set($url, \%attr, $option->{cache_expires});
+		$attr{no_hit}= 1;
+		\%attr;
+	  };
+}
 sub output {
 	my($self, $url, $option)= __get_args(@_);
 	my $cache= $self->get($url, $option) || {
@@ -298,41 +312,19 @@ sub output {
 	$cache->{content}= $cache->{error} if $cache->{error};
 	$response->body(\$cache->{content});
 }
-
-=head2 delete ( [URL] )
-
-The data of URL is deleted from cashe.
-
-  $e->delete('http://domainname/');
-
-=over 4
-
-=item * Alias is 'remove'.
-
-=back
-
-=cut
-*remove= \&delete;
 sub delete {
 	my $self= shift;
 	my $url = shift || croak q{ I want url. };
 	$self->cache->remove($url);
 }
+*remove= \&delete;
 
-=head2 cache
-
-The cashe object set to 'cache_name' is returned.
-
-  my $cache= $e->cache_ua->cache;
-
-=cut
 sub cache {
 	$_[0]->{cache} ||= do {
 		my $name= $_[0]->param('cache_name');
 		$_[0]->e->cache($name) || die qq{ '$name' cache is not found. };
 	  };
 }
-
 sub __get_args {
 	my $self  = shift;
 	my $url   = shift || croak q{ I want URL. };

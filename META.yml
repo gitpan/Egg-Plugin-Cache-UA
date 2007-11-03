@@ -1,6 +1,6 @@
 ---
 name: Egg-Plugin-Cache-UA
-version: 0.01
+version: 0.02
 author:
   - 'Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>'
 abstract: The result of LWP is cached for Egg::Plugin.
@@ -18,7 +18,7 @@ requires:
 provides:
   Egg::Plugin::Cache::UA:
     file: lib/Egg/Plugin/Cache/UA.pm
-    version: 0.01
+    version: 0.02
   Egg::Plugin::Cache::UA::handler:
     file: lib/Egg/Plugin/Cache/UA.pm
 generated_by: Module::Build version 0.2805
