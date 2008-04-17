@@ -1,9 +1,9 @@
 #line 1
 #######################################################################
-#      $URL: http://perlcritic.tigris.org/svn/perlcritic/tags/Test-Perl-Critic-0.08/lib/Test/Perl/Critic.pm $
-#     $Date: 2006-11-05 18:46:37 -0800 (Sun, 05 Nov 2006) $
+#      $URL: http://perlcritic.tigris.org/svn/perlcritic/tags/Test-Perl-Critic-1.01/lib/Test/Perl/Critic.pm $
+#     $Date: 2007-01-24 22:22:10 -0800 (Wed, 24 Jan 2007) $
 #   $Author: thaljef $
-# $Revision: 816 $
+# $Revision: 1183 $
 ########################################################################
 
 package Test::Perl::Critic;
@@ -17,7 +17,10 @@ use Perl::Critic qw();
 use Perl::Critic::Violation qw();
 use Perl::Critic::Utils;
 
-our $VERSION = 0.08;
+
+#---------------------------------------------------------------------------
+
+our $VERSION = 1.01;
 
 #---------------------------------------------------------------------------
 
@@ -118,4 +121,4 @@ sub _starting_points {
 
 __END__
 
-#line 372
+#line 412

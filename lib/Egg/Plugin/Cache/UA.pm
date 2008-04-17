@@ -8,7 +8,7 @@ use strict;
 use warnings;
 use base qw/ Egg::Plugin::LWP /;
 
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 sub _setup {
 	my($e)= @_;

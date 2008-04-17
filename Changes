@@ -1,5 +1,8 @@
 Revision history for Perl extension .
 
+1.01  2008/04/17
+	- Build.PL is abolished.
+
 1.00  2008/03/07
 	- Corresponded to Egg::Release v3.00.
 

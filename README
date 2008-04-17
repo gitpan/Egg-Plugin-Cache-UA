@@ -21,13 +21,6 @@ To install this module type the following:
    make test
    make install
 
-   or
-
-   perl Build.PL
-   ./Build
-   ./Build test
-   ./Build install
-
 AUTHOR
 
 Masatoshi Mizuno E<lt>lusheE<64>cpan.orgE<gt>
